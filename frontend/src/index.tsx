@@ -1,12 +1,15 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
-import 'normalize.css';
-import './defaults.css';
-import Shop from './Shop';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App';
 
-ReactDOM.render(
+const container = document.getElementById('root');
+const root = createRoot(container!);
+root.render(
   <React.StrictMode>
-    <Shop />
-  </React.StrictMode>,
-  document.getElementById('root')
+    <App />
+  </React.StrictMode>
 );
+
+
+

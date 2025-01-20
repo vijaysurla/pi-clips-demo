@@ -1,3 +1,25 @@
-.env
-docker-data
+# Root level ignores
+node_modules
 .DS_Store
+
+# Ignore .env files in all directories
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+
+# Ignore logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs and editors
+.vscode
+.idea
+*.swp
+*.swo
+
+# Build outputs
+**/build
+**/dist

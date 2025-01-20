@@ -1,0 +1,11 @@
+{
+    "name": "demo-project",
+    "version": "1.0.0",
+    "scripts": {
+      "check-deps": "node check-dependencies.js"
+    }
+  }
+  
+  
+  
+  
