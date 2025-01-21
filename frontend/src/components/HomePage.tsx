@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from "react"
+import type React from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Button } from "../components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs"
@@ -28,6 +29,133 @@ import axios from "axios"
 import { useAuth } from "../contexts/AuthContext"
 import TipSheet from "./tips/TipSheet"
 
+interface VideoPlayerProps {
+  video: Video
+  isActive: boolean
+  isMuted: boolean
+  onToggleMute: () => void
+}
+
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, isMuted, onToggleMute }) => {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false)
+  const [hasError, setHasError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted
+    }
+  }, [isMuted])
+
+  useEffect(() => {
+    if (isActive && videoRef.current && isVideoLoaded) {
+      videoRef.current.play().catch((error) => {
+        console.error("Autoplay failed:", error)
+        setErrorMessage(`Autoplay failed: ${error.message}`)
+      })
+      setIsPlaying(true)
+    } else if (!isActive && videoRef.current) {
+      videoRef.current.pause()
+      setIsPlaying(false)
+    }
+  }, [isActive, isVideoLoaded])
+
+  const handleLoadedData = () => {
+    console.log("Video loaded successfully:", {
+      url: video.signedUrl || video.url,
+      duration: videoRef.current?.duration,
+      readyState: videoRef.current?.readyState,
+    })
+    setIsVideoLoaded(true)
+    setHasError(false)
+    setErrorMessage("")
+  }
+
+  const handleError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    const target = e.target as HTMLVideoElement
+    setHasError(true)
+    const errorDetails = {
+      code: target.error?.code,
+      message: target.error?.message,
+      networkState: target.networkState,
+      readyState: target.readyState,
+      src: target.src,
+      currentTime: target.currentTime,
+    }
+    console.error("Video error details:", errorDetails)
+    setErrorMessage(`Video error: ${target.error?.message || "Unknown error"}. Code: ${target.error?.code}`)
+  }
+
+  const togglePlayPause = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause()
+      } else {
+        videoRef.current.play().catch((error) => {
+          console.error("Play failed:", error)
+          setErrorMessage(`Play failed: ${error.message}`)
+        })
+      }
+      setIsPlaying(!isPlaying)
+    }
+  }
+
+  // Ensure we're using the signed URL if available
+  const videoUrl = video.url
+  console.log("Using video URL:", videoUrl)
+
+  return (
+    <div className="relative h-full w-full flex items-center justify-center bg-black">
+      <div className="relative w-full pb-[177.77%]">
+        <div className="absolute inset-0 flex items-center justify-center">
+          {hasError ? (
+            <div className="text-white text-center p-4">
+              <p className="text-lg font-semibold mb-2">Error loading video</p>
+              <p className="text-sm opacity-80 mb-4">{errorMessage}</p>
+              <img
+                src={video.thumbnail || "/placeholder.svg"}
+                alt={video.description || "Video thumbnail"}
+                className="w-full h-full object-cover rounded-lg"
+              />
+            </div>
+          ) : (
+            <>
+              <video
+                ref={videoRef}
+                src={videoUrl}
+                className="absolute w-full h-full object-contain"
+                loop
+                playsInline
+                muted={isMuted}
+                onLoadedData={handleLoadedData}
+                onError={handleError}
+                controlsList="nodownload nofullscreen noremoteplayback"
+                onClick={togglePlayPause}
+                data-video-id={video.id}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute inset-0 w-full h-full bg-transparent hover:bg-black/10"
+                onClick={togglePlayPause}
+              >
+                {!isPlaying && (
+                  <Play className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                )}
+                {isPlaying && (
+                  <Pause className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                )}
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const HomePage: React.FC = () => {
   const { user, isAuthenticated, authenticate, signOut, token } = useAuth()
   const navigate = useNavigate()
@@ -44,9 +172,7 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     fetchVideos()
-    const interval = setInterval(fetchVideos, 30000) // Refresh videos every 30 seconds
-    return () => clearInterval(interval)
-  }, [user]) // Add user as dependency to refresh when user changes
+  }, [user])
 
   const fetchVideos = async () => {
     try {
@@ -57,11 +183,12 @@ const HomePage: React.FC = () => {
         },
       })
 
-      // Ensure we're getting the latest user data for each video
+      console.log("Raw response data:", response.data)
+
       const fetchedVideos: Video[] = response.data.map((video: any) => ({
         ...video,
         id: video._id,
-        url: video.url.startsWith("http") ? video.url : `http://localhost:5000${video.url}`,
+        url: video.signedUrl || video.url,
         thumbnail: video.thumbnail?.startsWith("http")
           ? video.thumbnail
           : `http://localhost:5000${video.thumbnail || "/placeholder.svg"}`,
@@ -80,6 +207,8 @@ const HomePage: React.FC = () => {
         isLiked: video.likes?.includes(user?._id) || false,
         commentCount: video.comments?.length || 0,
       }))
+
+      console.log("Processed videos:", fetchedVideos)
 
       setVideos(fetchedVideos)
     } catch (error) {
@@ -214,11 +343,13 @@ const HomePage: React.FC = () => {
     }
   }
 
-  const updateCommentCount = React.useCallback((videoId: string, count: number) => {
+  const updateCommentCount = useCallback((videoId: string, count: number) => {
     setVideos((prevVideos) =>
       prevVideos.map((video) => (video.id === videoId ? { ...video, commentCount: count } : video)),
     )
   }, [])
+
+  console.log("Current videos state:", videos)
 
   return (
     <div className="flex flex-col h-screen bg-black text-white">
@@ -475,109 +606,21 @@ const HomePage: React.FC = () => {
   )
 }
 
-interface VideoPlayerProps {
-  video: Video
-  isActive: boolean
-  isMuted: boolean
-  onToggleMute: () => void
-}
-
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, isActive, isMuted, onToggleMute }) => {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false)
-  const [hasError, setHasError] = useState(false)
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted
-    }
-  }, [isMuted])
-
-  useEffect(() => {
-    if (isActive && videoRef.current && isVideoLoaded) {
-      videoRef.current.play().catch((error) => console.error("Autoplay failed:", error))
-      setIsPlaying(true)
-    } else if (!isActive && videoRef.current) {
-      videoRef.current.pause()
-      setIsPlaying(false)
-    }
-  }, [isActive, isVideoLoaded])
-
-  const handleLoadedData = () => {
-    setIsVideoLoaded(true)
-    setHasError(false)
-  }
-
-  const handleError = () => {
-    setHasError(true)
-    console.error("Video failed to load:", video.url)
-    // Optionally, you can try to reload the video or show a placeholder
-    // setIsVideoLoaded(false);
-    // videoRef.current?.load();
-  }
-
-  const togglePlayPause = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause()
-      } else {
-        videoRef.current.play()
-      }
-      setIsPlaying(!isPlaying)
-    }
-  }
-
-  return (
-    <div className="relative h-full w-full flex items-center justify-center bg-black">
-      <div className="relative w-full pb-[177.77%]">
-        <div className="absolute inset-0 flex items-center justify-center">
-          {hasError ? (
-            <img
-              src={video.thumbnail || "/placeholder.svg"}
-              alt={video.description}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <>
-              <video
-                ref={videoRef}
-                src={video.url}
-                className="absolute w-full h-full object-contain"
-                loop
-                playsInline
-                muted={isMuted}
-                onLoadedData={handleLoadedData}
-                onError={(e) => {
-                  handleError()
-                  console.error("Video failed to load:", video.url, e)
-                }}
-                controlsList="nodownload nofullscreen noremoteplayback"
-                onClick={togglePlayPause}
-                data-video-id={video.id}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute inset-0 w-full h-full bg-transparent hover:bg-black/10"
-                onClick={togglePlayPause}
-              >
-                {!isPlaying && (
-                  <Play className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                )}
-                {isPlaying && (
-                  <Pause className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                )}
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default HomePage
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

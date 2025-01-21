@@ -1,34 +1,35 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import HomePage from './components/HomePage';
-import Profile from './components/Profile';
-import EditProfile from './components/EditProfile';
-import UploadPage from './components/upload/UploadPage';
-import TokensPage from './components/TokensPage';
-import VideoPage from './components/VideoPage';
-import axios from 'axios';
-import { Toaster } from "./components/ui/toaster";
-import SearchPage from './components/SearchPage';
+import type React from "react"
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom"
+import { AuthProvider, useAuth } from "./contexts/AuthContext"
+import HomePage from "./components/HomePage"
+import HomeTest from "./components/HomeTest"
+import Profile from "./components/Profile"
+import EditProfile from "./components/EditProfile"
+import UploadPage from "./components/upload/UploadPage"
+import TokensPage from "./components/TokensPage"
+import VideoPage from "./components/VideoPage"
+import axios from "axios"
+import { Toaster } from "./components/ui/toaster"
+import SearchPage from "./components/SearchPage"
 
 // Set default axios configuration
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = 'http://localhost:5000'; // Adjust this if your backend URL is different
+axios.defaults.withCredentials = true
+axios.defaults.baseURL = "http://localhost:5000" // Adjust this if your backend URL is different
 
 // ProtectedRoute component to handle authentication
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth()
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center h-screen">Loading...</div>
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" replace />
   }
 
-  return <>{children}</>;
-};
+  return <>{children}</>
+}
 
 const App: React.FC = () => {
   return (
@@ -37,45 +38,46 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-zinc-900 text-white">
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route 
-              path="/profile" 
+            <Route path="/test" element={<HomeTest />} />
+            <Route
+              path="/profile"
               element={
                 <ProtectedRoute>
                   <Profile />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/profile/:id" 
+            <Route
+              path="/profile/:id"
               element={
                 <ProtectedRoute>
                   <Profile />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/profile/edit" 
+            <Route
+              path="/profile/edit"
               element={
                 <ProtectedRoute>
                   <EditProfile />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/upload" 
+            <Route
+              path="/upload"
               element={
                 <ProtectedRoute>
                   <UploadPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/tokens" 
+            <Route
+              path="/tokens"
               element={
                 <ProtectedRoute>
                   <TokensPage />
                 </ProtectedRoute>
-              } 
+              }
             />
             <Route path="/video/:id" element={<VideoPage />} />
             <Route path="/search" element={<SearchPage />} />
@@ -86,10 +88,16 @@ const App: React.FC = () => {
       </Router>
       <Toaster />
     </AuthProvider>
-  );
-};
+  )
+}
 
-export default App;
+export default App
+
+
+
+
+
+
 
 
 

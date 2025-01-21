@@ -6,6 +6,7 @@ import session from 'express-session';
 import config from './config';
 import userRoutes from './routes/users';
 import videoRoutes from './routes/videos';
+import videoTestRoutes from "./routes/videos-test"
 import { User, UserDocument } from './models/schemas';
 import path from 'path';
 
@@ -80,6 +81,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/videos', videoRoutes);
+app.use("/api/videos-test", videoTestRoutes) // New test route
 // Add the search route to your Express app
 app.use('/api/search', searchRoutes);
 
