@@ -4,12 +4,15 @@
   "description": "Backend for 227clips",
   "main": "server.ts",
   "license": "UNLICENSED",
-  "scripts": {
-    "start": "ts-node server.ts",
-    "dev": "nodemon --exec ts-node server.ts",
-    "build": "tsc",
-    "postinstall": "yarn build"
+  "engines": {
+    "node": "16.x"
   },
+  "scripts": {
+  "start": "ts-node server.ts",
+  "dev": "nodemon --exec ts-node server.ts",
+  "build": "tsc"
+},
+  
   "dependencies": {
     "@aws-sdk/client-s3": "^3.731.1",
     "@aws-sdk/credential-providers": "^3.731.1",
@@ -17,6 +20,8 @@
     "@pinetwork-js/api-typing": "^0.7.0",
     "@pinetwork-js/sdk": "^0.7.0",
     "@types/multer": "^1.4.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.17.1",
@@ -33,8 +38,7 @@
     "@types/express-session": "^1.17.4",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^16.11.6",
-    "nodemon": "^2.0.14",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
+    "nodemon": "^2.0.14"
+    
   }
 }
