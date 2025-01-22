@@ -19,8 +19,13 @@
       "express": ["./node_modules/@types/express"]
     }
   },
-  "include": ["**/*.ts", "types/**/*.d.ts"],
-  "exclude": ["node_modules"]
+  "include": ["*.ts",
+    "routes/**/*.ts",
+    "models/**/*.ts",
+    "middleware/**/*.ts",
+    "config/**/*.ts",
+    "utils/**/*.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts", "**/*.test.ts"]
 }
 
 
